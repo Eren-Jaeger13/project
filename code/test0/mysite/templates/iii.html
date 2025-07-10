@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试中心</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #1a1a2e;
+            --container-bg: #16213e;
+            --primary-color: #0f3460;
+            --secondary-color: #e94560;
+            --text-color: #e0e0e0;
+            --light-text: #a0a0a0;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --clicked-color: #3498db;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            border: 1px solid var(--primary-color);
+        }
+
+        h1,
+        h2 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: var(--light-text);
+            line-height: 1.6;
+        }
+
+        .btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            background-color: #ff5a79;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        #question-container {
+            text-align: left;
+        }
+
+        #question-text {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #answer-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .answer-btn {
+            background-color: var(--primary-color);
+            padding: 15px;
+            font-size: 1rem;
+            border: 2px solid transparent;
+        }
+
+        .answer-btn:hover {
+            background-color: #1e4a8b;
+        }
+
+        .answer-btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+        }
+
+        .answer-btn.incorrect {
+            background-color: var(--incorrect-color);
+            color: white;
+        }
+
+        .answer-btn.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        #progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--secondary-color);
+            transition: width 0.4s ease;
+        }
+
+        #result-analysis {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        #test-center-container .btn-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #shulte-grid {
+            display: grid;
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .shulte-cell {
+            background-color: var(--primary-color);
+            padding: 15px;
+            font-size: 1.2rem;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .shulte-cell:hover {
+            background-color: #1e4a8b;
+        }
+
+        .shulte-cell.clicked {
+            background-color: var(--clicked-color);
+        }
+
+        /* 新增色彩敏感测试样式 */
+        #color-test-container {
+            text-align: center;
+        }
+
+        #color-word {
+            font-size: 3rem;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+
+        #color-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .color-option {
+            padding: 15px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: white;
+        }
+
+        .color-option:hover {
+            transform: translateY(-3px);
+        }
+
+        #color-timer {
+            font-size: 1.5rem;
+            margin: 10px 0;
+            color: var(--secondary-color);
+        }
+
+        #color-difficulty-container {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="main-container" class="container">
+        <!-- 测试中心界面 -->
+        <div id="test-center-container">
+            <h1>测试中心</h1>
+            <p>选择你想进行的测试：</p>
+            <div class="btn-container">
+                <button id="reaction-test-btn" class="btn">反应测试</button>
+                <button id="iq-test-btn" class="btn">智商测试</button>
+                <button id="focus-test-btn" class="btn">专注度测试</button>
+                <button id="color-sensitivity-test-btn" class="btn">色彩敏感测试</button>
+                <button id="eq-test-btn" class="btn">情商测试</button>
+            </div>
+            <!-- 返回主界面按钮 -->
+            <button id="backToMainBtn" class="btn">返回主界面</button>
+        </div>
+
+        <!-- 反应测试难度选择界面 -->
+        <div id="reaction-difficulty-container" class="hide">
+            <h1>反应测试 - 选择难度</h1>
+            <p>请选择舒尔特方格的难度：</p>
+            <button id="3x3-btn" class="btn">3x3</button>
+            <button id="4x4-btn" class="btn">4x4</button>
+            <button id="5x5-btn" class="btn">5x5</button>
+            <button id="6x6-btn" class="btn">6x6</button>
+            <button id="back-to-test-center-btn" class="btn">返回测试中心</button>
+        </div>
+
+        <!-- 舒尔特方格测试界面 -->
+        <div id="shulte-test-container" class="hide">
+            <h1>反应测试 - 舒尔特方格</h1>
+            <p id="shulte-instruction">请按数字从小到大的顺序点击</p>
+            <div id="shulte-grid"></div>
+            <p id="shulte-timer">用时：0.00 秒</p>
+            <button id="shulte-back-to-difficulty-btn" class="btn">返回选择难度</button>
+        </div>
+
+        <!-- 答题界面 -->
+        <div id="quiz-container" class="hide">
+            <div id="question-header">
+                <span id="question-counter">问题 1 / 10</span>
+            </div>
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <h2 id="question-text">问题会显示在这里</h2>
+            <div id="answer-buttons" class="btn-grid">
+                <!-- 答案按钮将由JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 色彩敏感测试难度选择界面 -->
+        <div id="color-difficulty-container" class="hide">
+            <h1>色彩敏感测试 - 选择难度</h1>
+            <p>请选择测试难度：</p>
+            <button id="color-easy-btn" class="btn">简单 (1.8秒/题)</button>
+            <button id="color-medium-btn" class="btn">普通 (1.25秒/题)</button>
+            <button id="color-hard-btn" class="btn">困难 (1.0秒/题)</button>
+            <button id="color-back-to-test-center-btn" class="btn">返回测试中心</button>
+        </div>
+
+        <!-- 色彩敏感测试界面 -->
+        <div id="color-test-container" class="hide">
+            <div id="color-question-header">
+                <span id="color-question-counter">问题 1 / 10</span>
+            </div>
+            <div id="color-progress-bar-container">
+                <div id="color-progress-bar"></div>
+            </div>
+            <div id="color-word"></div>
+            <div id="color-timer">1.8</div>
+            <div id="color-options"></div>
+            <button id="color-back-to-difficulty-btn" class="btn">返回选择难度</button>
+        </div>
+
+        <!-- 结果界面 -->
+        <div id="result-container" class="hide">
+            <h1>测试完成！</h1>
+            <div id="test-specific-result"></div>
+            <div id="result-analysis"></div>
+            <button id="restart-btn" class="btn">再次挑战</button>
+            <button id="back-btn" class="btn">返回主页</button>
+        </div>
+    </div>
+
+    <script>
+        const iqQuestions = [
+            { question: "哪个数字不属于这个序列：2, 3, 6, 7, 14, 15, 30", options: ["7", "8", "14", "30"], answer: "8" },
+            { question: "如果所有的“蓝波”都是“格兰”，而一些“格兰”是“斯派”，那么我们能确定什么？", options: ["所有蓝波都是斯派", "一些蓝波是斯派", "没有蓝波是斯派", "无法确定蓝波和斯派的关系"], answer: "无法确定蓝波和斯派的关系" },
+            { question: "在3点15分时，时针和分针之间的夹角是多少度？", options: ["0度", "7.5度", "15度", "22.5度"], answer: "7.5度" },
+            { question: "填入下一个数字：1, 4, 9, 16, 25, ?", options: ["32", "36", "49", "64"], answer: "36" },
+            { question: "“医生”对于“病人”，就像“律师”对于？", options: ["法官", "法庭", "客户", "案件"], answer: "客户" },
+            { question: "一个男孩有和他兄弟一样多的姐妹，但他的每个姐妹只有他兄弟数量一半的姐妹。这个家庭有多少个男孩和女孩？", options: ["2男3女", "3男2女", "4男3女", "3男4女"], answer: "4男3女" },
+            { question: "如果昨天是后天的话，那么今天就是星期五了。那么真正的“今天”是星期几？", options: ["星期一", "星期三", "星期日", "星期五"], answer: "星期三" },
+            { question: "在下列图形中，哪一个与其他三个最不相同？（想象四个图形：一个实心圆，一个实心正方形，一个实心三角形，一个空心圆）", options: ["实心圆", "实心正方形", "实心三角形", "空心圆"], answer: "空心圆" },
+            { question: "你参加一场赛跑，你超过了第二名，那么你现在是第几名？", options: ["第一名", "第二名", "第三名", "无法确定"], answer: "第二名" }
+        ];
+
+        const focusQuestions = [
+            { question: "专注度测试题目1", options: ["选项1", "选项2", "选项3", "选项4"], answer: "选项1" },
+            { question: "专注度测试题目2", options: ["选项1", "选项2", "选项3", "选项4"], answer: "选项2" },
+        ];
+
+        const eqQuestions = [
+            { question: "情商测试题目1", options: ["选项1", "选项2", "选项3", "选项4"], answer: "选项1" },
+            { question: "情商测试题目2", options: ["选项1", "选项2", "选项3", "选项4"], answer: "选项2" },
+        ];
+
+        // 色彩敏感测试相关变量
+        const colorNames = ["红色", "绿色", "蓝色", "黄色", "紫色", "橙色"];
+        const colorHex = {
+            "红色": "#e74c3c",
+            "绿色": "#2ecc71",
+            "蓝色": "#3498db",
+            "黄色": "#f1c40f",
+            "紫色": "#9b59b6",
+            "橙色": "#e67e22"
+        };
+
+        const testCenterContainer = document.getElementById('test-center-container');
+        const reactionDifficultyContainer = document.getElementById('reaction-difficulty-container');
+        const shulteTestContainer = document.getElementById('shulte-test-container');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultContainer = document.getElementById('result-container');
+        const reactionTestBtn = document.getElementById('reaction-test-btn');
+        const iqTestBtn = document.getElementById('iq-test-btn');
+        const focusTestBtn = document.getElementById('focus-test-btn');
+        const colorSensitivityTestBtn = document.getElementById('color-sensitivity-test-btn');
+        const eqTestBtn = document.getElementById('eq-test-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const backBtn = document.getElementById('back-btn');
+        const questionTextEl = document.getElementById('question-text');
+        const answerButtonsEl = document.getElementById('answer-buttons');
+        const questionCounterEl = document.getElementById('question-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const testSpecificResultEl = document.getElementById('test-specific-result');
+        const resultAnalysisEl = document.getElementById('result-analysis');
+        const backToMainBtn = document.getElementById('backToMainBtn');
+        const backToTestCenterBtn = document.getElementById('back-to-test-center-btn');
+        const shulteBackToDifficultyBtn = document.getElementById('shulte-back-to-difficulty-btn');
+        const shulteGrid = document.getElementById('shulte-grid');
+        const shulteTimer = document.getElementById('shulte-timer');
+
+        // 色彩敏感测试相关元素
+        const colorDifficultyContainer = document.getElementById('color-difficulty-container');
+        const colorTestContainer = document.getElementById('color-test-container');
+        const colorWordEl = document.getElementById('color-word');
+        const colorOptionsEl = document.getElementById('color-options');
+        const colorTimerEl = document.getElementById('color-timer');
+        const colorQuestionCounterEl = document.getElementById('color-question-counter');
+        const colorProgressBar = document.getElementById('color-progress-bar');
+        const colorEasyBtn = document.getElementById('color-easy-btn');
+        const colorMediumBtn = document.getElementById('color-medium-btn');
+        const colorHardBtn = document.getElementById('color-hard-btn');
+        const colorBackToDifficultyBtn = document.getElementById('color-back-to-difficulty-btn');
+
+        let currentQuestionIndex, score, shuffledQuestions, currentTestType;
+        let shulteNumbers, currentShulteIndex, shulteStartTime, shulteInterval;
+        let currentTargetNumber = 1; // 当前应点击的目标数字
+
+        // 色彩敏感测试相关变量
+        let colorQuestions, currentColorQuestionIndex, colorScore, colorDifficulty, colorTimer, colorTimerInterval;
+        const difficultyTimeLimit = {
+            "easy": 1.8,
+            "medium": 1.25,
+            "hard": 1.0
+        };
+
+        function startGame(testType) {
+            if (testType === 'reaction') {
+                testCenterContainer.classList.add('hide');
+                reactionDifficultyContainer.classList.remove('hide');
+            } else if (testType === 'color-sensitivity') {
+                testCenterContainer.classList.add('hide');
+                colorDifficultyContainer.classList.remove('hide');
+            } else {
+                testCenterContainer.classList.add('hide');
+                resultContainer.classList.add('hide');
+                quizContainer.classList.remove('hide');
+                currentTestType = testType;
+                switch (testType) {
+                    case 'iq':
+                        shuffledQuestions = iqQuestions.sort(() => Math.random() - 0.5);
+                        break;
+                    case 'focus':
+                        shuffledQuestions = focusQuestions.sort(() => Math.random() - 0.5);
+                        break;
+                    case 'eq':
+                        shuffledQuestions = eqQuestions.sort(() => Math.random() - 0.5);
+                        break;
+                }
+                currentQuestionIndex = 0;
+                score = 0;
+                setNextQuestion();
+            }
+        }
+
+        function startShulteTest(size) {
+            reactionDifficultyContainer.classList.add('hide');
+            shulteTestContainer.classList.remove('hide');
+            currentTestType = 'reaction';
+            currentTargetNumber = 1;
+
+            shulteNumbers = [];
+            for (let i = 1; i <= size * size; i++) {
+                shulteNumbers.push(i);
+            }
+            shulteNumbers.sort(() => Math.random() - 0.5);
+
+            shulteGrid.innerHTML = '';
+            shulteGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            shulteNumbers.forEach((number) => {
+                const cell = document.createElement('button');
+                cell.innerText = number;
+                cell.classList.add('shulte-cell');
+                cell.dataset.number = number;
+                cell.addEventListener('click', () => checkShulteAnswer(cell));
+                shulteGrid.appendChild(cell);
+            });
+
+            currentShulteIndex = 0;
+            shulteStartTime = Date.now();
+            shulteInterval = setInterval(updateShulteTimer, 10);
+        }
+
+        function checkShulteAnswer(cell) {
+            const number = parseInt(cell.dataset.number);
+            if (number === currentTargetNumber) {
+                cell.classList.add('clicked');
+                
+                // 禁用已点击的方块
+                cell.disabled = true;
+                
+                currentShulteIndex++;
+                currentTargetNumber++;
+                if (currentShulteIndex === shulteNumbers.length) {
+                    clearInterval(shulteInterval);
+                    const totalTime = (Date.now() - shulteStartTime) / 1000;
+                    showShulteResult(totalTime);
+                }
+            }
+        }
+
+        function updateShulteTimer() {
+            const currentTime = (Date.now() - shulteStartTime) / 1000;
+            shulteTimer.innerText = `用时：${currentTime.toFixed(2)} 秒`;
+        }
+
+        function showShulteResult(totalTime) {
+            shulteTestContainer.classList.add('hide');
+            resultContainer.classList.remove('hide');
+            
+            // 显示反应测试结果
+            const size = Math.sqrt(shulteNumbers.length);
+            testSpecificResultEl.innerHTML = `<h2>完成 ${size}x${size} 舒尔特方格!</h2><p>你的用时：<strong>${totalTime.toFixed(2)}</strong> 秒</p>`;
+
+            let analysisText, analysisColor;
+            if (size === 3) {
+                if (totalTime < 5) {
+                    analysisText = '你的反应速度极快，简直像闪电一样！';
+                    analysisColor = '#f1c40f';
+                } else if (totalTime < 10) {
+                    analysisText = '反应很不错，继续保持！';
+                    analysisColor = '#2ecc71';
+                } else {
+                    analysisText = '还有提升空间，再练练吧！';
+                    analysisColor = '#e74c3c';
+                }
+            } else if (size === 4) {
+                if (totalTime < 10) {
+                    analysisText = '反应敏捷，表现出色！';
+                    analysisColor = '#f1c40f';
+                } else if (totalTime < 20) {
+                    analysisText = '表现良好，继续加油！';
+                    analysisColor = '#2ecc71';
+                } else {
+                    analysisText = '可以多练习提高反应速度。';
+                    analysisColor = '#e74c3c';
+                }
+            } else if (size === 5) {
+                if (totalTime < 20) {
+                    analysisText = '反应超强，令人惊叹！';
+                    analysisColor = '#f1c40f';
+                } else if (totalTime < 35) {
+                    analysisText = '表现不错，持续进步！';
+                    analysisColor = '#2ecc71';
+                } else {
+                    analysisText = '需要加强训练哦。';
+                    analysisColor = '#e74c3c';
+                }
+            } else if (size === 6) {
+                if (totalTime < 30) {
+                    analysisText = '反应神级，无人能敌！';
+                    analysisColor = '#f1c40f';
+                } else if (totalTime < 50) {
+                    analysisText = '表现优秀，继续努力！';
+                    analysisColor = '#2ecc71';
+                } else {
+                    analysisText = '还有很大的提升空间。';
+                    analysisColor = '#e74c3c';
+                }
+            }
+
+            resultAnalysisEl.innerText = analysisText;
+            resultAnalysisEl.style.backgroundColor = analysisColor;
+
+            // 保存反应测试结果
+            const scores = JSON.parse(localStorage.getItem(`${currentTestType}TestScores`)) || [];
+            scores.push(totalTime);
+            localStorage.setItem(`${currentTestType}TestScores`, JSON.stringify(scores));
+        }
+
+        function setNextQuestion() {
+            resetState();
+            if (currentQuestionIndex < shuffledQuestions.length) {
+                showQuestion(shuffledQuestions[currentQuestionIndex]);
+                updateProgress();
+            } else {
+                showResult();
+            }
+        }
+
+        function showQuestion(question) {
+            questionTextEl.innerText = question.question;
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.classList.add('btn', 'answer-btn');
+                button.addEventListener('click', () => selectAnswer(button, question.answer));
+                answerButtonsEl.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            while (answerButtonsEl.firstChild) {
+                answerButtonsEl.removeChild(answerButtonsEl.firstChild);
+            }
+        }
+
+        function selectAnswer(selectedButton, correctAnswer) {
+            const isCorrect = selectedButton.innerText === correctAnswer;
+            if (isCorrect) { score += 10; }
+
+            Array.from(answerButtonsEl.children).forEach(button => {
+                button.classList.add('disabled');
+                if (button.innerText === correctAnswer) { button.classList.add('correct'); }
+            });
+
+            if (!isCorrect) { selectedButton.classList.add('incorrect'); }
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                setNextQuestion();
+            }, 1500);
+        }
+
+        function updateProgress() {
+            const progressPercentage = ((currentQuestionIndex + 1) / shuffledQuestions.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+            questionCounterEl.innerText = `问题 ${currentQuestionIndex + 1} / ${shuffledQuestions.length}`;
+        }
+
+        function showResult() {
+            quizContainer.classList.add('hide');
+            resultContainer.classList.remove('hide');
+            
+            // 显示常规测试结果
+            testSpecificResultEl.innerHTML = `<h2>你的得分：<span id="score-text">${score}</span> / 10</h2>`;
+
+            const scores = JSON.parse(localStorage.getItem(`${currentTestType}TestScores`)) || [];
+            const highScore = scores.length > 0 ? Math.max(...scores) : 0;
+
+            let analysisText, analysisColor;
+
+            if (scores.length === 0) {
+                analysisText = `这是你完成 ${currentTestType} 测试后的首次测试。它将成为你衡量进步的基准！`;
+                analysisColor = "#3498db";
+            } else {
+                const lastScore = scores[scores.length - 1];
+                if (score > highScore) {
+                    analysisText = `专注的力量！你打破了 ${currentTestType} 测试的个人纪录，思维敏锐度达到了新的高度！`;
+                    analysisColor = "#f1c40f";
+                } else if (score > lastScore) {
+                    analysisText = `效果显著！经过专注，你在 ${currentTestType} 测试中的表现比上次更出色了。继续保持！`;
+                    analysisColor = '#2ecc71';
+                } else if (score === lastScore) {
+                    analysisText = `表现稳定。持续的专注会在 ${currentTestType} 测试中带来长期的改变。加油！`;
+                    analysisColor = "#e67e22";
+                } else {
+                    analysisText = `这次在 ${currentTestType} 测试中可能有点累了。休息一下，下次专注后状态会更好！`;
+                    analysisColor = '#e74c3c';
+                }
+            }
+
+            resultAnalysisEl.innerText = analysisText;
+            resultAnalysisEl.style.backgroundColor = analysisColor;
+
+            scores.push(score);
+            localStorage.setItem(`${currentTestType}TestScores`, JSON.stringify(scores));
+        }
+
+        // 色彩敏感测试相关函数
+        function generateColorQuestions() {
+            const questions = [];
+            for (let i = 0; i < 10; i++) {
+                // 随机选择一个颜色词
+                const colorWord = colorNames[Math.floor(Math.random() * colorNames.length)];
+                
+                // 确保显示的颜色和词不同
+                let displayColor;
+                do {
+                    displayColor = colorNames[Math.floor(Math.random() * colorNames.length)];
+                } while (displayColor === colorWord);
+                
+                // 生成选项，确保包含正确答案
+                let options = [colorWord];
+                while (options.length < 4) {
+                    const randomColor = colorNames[Math.floor(Math.random() * colorNames.length)];
+                    if (!options.includes(randomColor)) {
+                        options.push(randomColor);
+                    }
+                }
+                
+                // 打乱选项顺序
+                options.sort(() => Math.random() - 0.5);
+                
+                questions.push({
+                    word: colorWord,
+                    displayColor: displayColor,
+                    options: options,
+                    answer: colorWord
+                });
+            }
+            return questions;
+        }
+
+        function startColorTest(difficulty) {
+            colorDifficultyContainer.classList.add('hide');
+            colorTestContainer.classList.remove('hide');
+            currentTestType = 'color-sensitivity';
+            colorDifficulty = difficulty;
+            colorQuestions = generateColorQuestions();
+            currentColorQuestionIndex = 0;
+            colorScore = 0;
+            
+            setNextColorQuestion();
+        }
+
+        function setNextColorQuestion() {
+            if (currentColorQuestionIndex < colorQuestions.length) {
+                const question = colorQuestions[currentColorQuestionIndex];
+                colorWordEl.innerText = question.word;
+                colorWordEl.style.color = colorHex[question.displayColor];
+                
+                // 更新进度条
+                const progressPercentage = ((currentColorQuestionIndex + 1) / colorQuestions.length) * 100;
+                colorProgressBar.style.width = `${progressPercentage}%`;
+                colorQuestionCounterEl.innerText = `问题 ${currentColorQuestionIndex + 1} / ${colorQuestions.length}`;
+                
+                // 清空选项
+                colorOptionsEl.innerHTML = '';
+                
+                // 添加选项按钮
+                question.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.innerText = option;
+                    button.classList.add('color-option');
+                    button.style.backgroundColor = colorHex[option];
+                    button.addEventListener('click', () => selectColorAnswer(button, question.answer));
+                    colorOptionsEl.appendChild(button);
+                });
+                
+                // 设置计时器
+                colorTimer = difficultyTimeLimit[colorDifficulty];
+                colorTimerEl.innerText = colorTimer.toFixed(2);
+                
+                // 清除之前的计时器并启动新的计时器
+                clearInterval(colorTimerInterval);
+                colorTimerInterval = setInterval(updateColorTimer, 10);
+            } else {
+                showColorResult();
+            }
+        }
+
+        function updateColorTimer() {
+            colorTimer -= 0.01;
+            colorTimerEl.innerText = colorTimer.toFixed(2);
+            
+            if (colorTimer <= 0) {
+                clearInterval(colorTimerInterval);
+                // 时间到，自动选择并继续
+                selectColorAnswer(null, null);
+            }
+        }
+
+        function selectColorAnswer(selectedButton, correctAnswer) {
+            clearInterval(colorTimerInterval);
+            
+            // 禁用所有选项
+            Array.from(colorOptionsEl.children).forEach(button => {
+                button.disabled = true;
+            });
+            
+            // 检查是否回答正确
+            const isCorrect = selectedButton && selectedButton.innerText === correctAnswer;
+            if (isCorrect) {
+                colorScore++;
+                if (selectedButton) selectedButton.classList.add('correct');
+            } else {
+                // 显示正确答案
+                Array.from(colorOptionsEl.children).forEach(button => {
+                    if (button.innerText === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+                if (selectedButton) selectedButton.classList.add('incorrect');
+            }
+            
+            // 2秒后进入下一题
+            setTimeout(() => {
+                currentColorQuestionIndex++;
+                setNextColorQuestion();
+            }, 1500);
+        }
+
+        function showColorResult() {
+            colorTestContainer.classList.add('hide');
+            resultContainer.classList.remove('hide');
+            
+            // 显示色彩敏感测试结果
+            testSpecificResultEl.innerHTML = `<h2>色彩敏感测试结果</h2><p>你的得分：<strong>${colorScore}</strong> / 10</p>`;
+
+            let analysisText, analysisColor;
+            
+            if (colorScore >= 9) {
+                analysisText = '你的色彩感知能力和反应速度惊人！斯特鲁普效应几乎对你没有影响，你的注意力和色彩敏感度达到了专业水平！';
+                analysisColor = '#f1c40f';
+            } else if (colorScore >= 7) {
+                analysisText = '你的色彩感知能力和反应速度很好！斯特鲁普效应对你的影响较小，你的注意力和色彩敏感度处于优秀水平！';
+                analysisColor = '#2ecc71';
+            } else if (colorScore >= 5) {
+                analysisText = '你的色彩感知能力和反应速度一般。斯特鲁普效应会对你产生一定影响，通过练习可以提高你的注意力和色彩敏感度！';
+                analysisColor = '#e67e22';
+            } else {
+                analysisText = '斯特鲁普效应明显影响了你的反应速度。不要担心，这是正常现象。通过持续练习，你可以显著提高你的注意力和色彩敏感度！';
+                analysisColor = '#e74c3c';
+            }
+
+            resultAnalysisEl.innerText = analysisText;
+            resultAnalysisEl.style.backgroundColor = analysisColor;
+
+            const scores = JSON.parse(localStorage.getItem(`${currentTestType}TestScores`)) || [];
+            scores.push(colorScore);
+            localStorage.setItem(`${currentTestType}TestScores`, JSON.stringify(scores));
+        }
+
+        // 事件监听器
+        reactionTestBtn.addEventListener('click', () => startGame('reaction'));
+        iqTestBtn.addEventListener('click', () => startGame('iq'));
+        focusTestBtn.addEventListener('click', () => startGame('focus'));
+        colorSensitivityTestBtn.addEventListener('click', () => startGame('color-sensitivity'));
+        eqTestBtn.addEventListener('click', () => startGame('eq'));
+        restartBtn.addEventListener('click', () => {
+            if (currentTestType === 'reaction') {
+                reactionDifficultyContainer.classList.remove('hide');
+                resultContainer.classList.add('hide');
+            } else if (currentTestType === 'color-sensitivity') {
+                colorDifficultyContainer.classList.remove('hide');
+                resultContainer.classList.add('hide');
+            } else {
+                startGame(currentTestType);
+            }
+        });
+        backBtn.addEventListener('click', () => {
+            testCenterContainer.classList.remove('hide');
+            resultContainer.classList.add('hide');
+            quizContainer.classList.add('hide');
+            shulteTestContainer.classList.add('hide');
+            reactionDifficultyContainer.classList.add('hide');
+            colorTestContainer.classList.add('hide');
+            colorDifficultyContainer.classList.add('hide');
+        });
+        backToMainBtn.addEventListener('click', () => {
+            window.location.href = '/';
+        });
+        backToTestCenterBtn.addEventListener('click', () => {
+            reactionDifficultyContainer.classList.add('hide');
+            testCenterContainer.classList.remove('hide');
+        });
+        shulteBackToDifficultyBtn.addEventListener('click', () => {
+            shulteTestContainer.classList.add('hide');
+            reactionDifficultyContainer.classList.remove('hide');
+            clearInterval(shulteInterval);
+        });
+        document.getElementById('3x3-btn').addEventListener('click', () => startShulteTest(3));
+        document.getElementById('4x4-btn').addEventListener('click', () => startShulteTest(4));
+        document.getElementById('5x5-btn').addEventListener('click', () => startShulteTest(5));
+        document.getElementById('6x6-btn').addEventListener('click', () => startShulteTest(6));
+        
+        // 色彩敏感测试事件监听器
+        colorEasyBtn.addEventListener('click', () => startColorTest('easy'));
+        colorMediumBtn.addEventListener('click', () => startColorTest('medium'));
+        colorHardBtn.addEventListener('click', () => startColorTest('hard'));
+        colorBackToDifficultyBtn.addEventListener('click', () => {
+            colorTestContainer.classList.add('hide');
+            colorDifficultyContainer.classList.remove('hide');
+            clearInterval(colorTimerInterval);
+        });
+        colorBackToTestCenterBtn.addEventListener('click', () => {
+            colorDifficultyContainer.classList.add('hide');
+            testCenterContainer.classList.remove('hide');
+        });
+    </script>
+</body>
+
+</html>    

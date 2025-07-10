@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自习室 - 专注计时</title>
+    <style>
+        /* 全局样式（与主界面保持一致） */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f7;
+            margin: 0;
+            overflow: hidden;
+            min-height: 100vh;
+            transition: background-color 1s ease;
+        }
+
+        /* 全屏场景样式（与主界面保持一致） */
+        .fullscreen-scene {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            transition: all 2s ease;
+        }
+
+        .sun {
+            position: absolute;
+            top: 15%;
+            right: 15%;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            z-index: 2;
+            opacity: 0;
+            transition: all 2s ease-in-out;
+        }
+
+        .plant {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 180px;
+            z-index: 2;
+            opacity: 0;
+            transition: all 2s ease-in-out;
+        }
+
+        .plant-stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 70%;
+            background-color: #4a7c51;
+            border-radius: 6px;
+        }
+
+        .plant-leaf {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 70% 30%;
+            background-color: #70a970;
+            transition: all 1s ease;
+        }
+
+        /* 计时控制区样式（与主界面保持一致） */
+        .timer-control {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 90%;
+            max-width: 600px;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.5s ease;
+        }
+
+        .timer-display {
+            font-size: 72px;
+            font-weight: 200;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #5b86e5, #36d1dc);
+            transition: width 1s linear;
+        }
+
+        .theme-name {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stage-info {
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 按钮组样式（与主界面保持一致） */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #5b86e5, #36d1dc);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(91, 134, 229, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(91, 134, 229, 0.4);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #a0a8b3, #c9d6df);
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+
+        #resetBtn {
+            background: linear-gradient(135deg, #8e9eab, #eef2f3);
+        }
+
+        #setTimeBtn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        /* 合并的开始/暂停按钮样式（与主界面保持一致） */
+        .toggle-btn {
+            position: relative;
+            padding: 15px 30px 15px 70px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #5b86e5, #36d1dc);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 15px rgba(91, 134, 229, 0.3);
+            overflow: hidden;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            box-shadow: 0 6px 20px rgba(255, 75, 43, 0.4);
+        }
+
+        .icon-container {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        /* 时间选择器样式（与主界面保持一致） */
+        #customTimeSelector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        #customTimeSelector select {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background: white;
+            color: #333;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(91, 134, 229, 0.3);
+        }
+
+        /* 主题样式（与主界面保持一致） */
+        .default-theme .sky {
+            background: linear-gradient(to bottom, #a0a8b3, #c9d6df);
+        }
+        .default-theme .sun {
+            background-color: #ffd700;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+        }
+
+        /* 返回按钮样式（与主界面保持一致） */
+        #backToMainBtn {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #5b86e5, #36d1dc);
+        }
+
+        #backToMainBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(91, 134, 229, 0.4);
+        }
+    </style>
+</head>
+<body class="default-theme">
+    <!-- 全屏场景 -->
+    <div class="fullscreen-scene">
+        <div class="sky"></div>
+        <div class="sun"></div>
+        <div class="plant">
+            <div class="plant-stem"></div>
+            <div class="plant-leaf" style="top: 40%; left: 10%; transform: rotate(-30deg);"></div>
+            <div class="plant-leaf" style="top: 30%; right: 5%; transform: rotate(30deg);"></div>
+        </div>
+
+        <!-- 计时控制区（自习室界面） -->
+        <div class="timer-control">
+            <div class="timer-display" id="timer">25:00</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="button-group">
+                <!-- 合并的开始/暂停按钮 -->
+                <button id="toggleBtn" class="toggle-btn">
+                    <div class="icon-container">
+                        <svg class="play-icon" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" style="display: none;">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </div>
+                    <span class="btn-text">开始专注</span>
+                </button>
+                <button id="resetBtn" disabled>重置</button>
+                <button id="setTimeBtn">设置专注时间</button>
+                <!-- 自定义时间选择器 -->
+                <div id="customTimeSelector" style="display: none;">
+                    <select id="hoursSelect">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                        <option value="32">32</option>
+                        <option value="33">33</option>
+                        <option value="34">34</option>
+                        <option value="35">35</option>
+                        <option value="36">36</option>
+                        <option value="37">37</option>
+                        <option value="38">38</option>
+                        <option value="39">39</option>
+                        <option value="40">40</option>
+                        <option value="41">41</option>
+                        <option value="42">42</option>
+                        <option value="43">43</option>
+                        <option value="44">44</option>
+                        <option value="45">45</option>
+                        <option value="46">46</option>
+                        <option value="47">47</option>
+                        <option value="48">48</option>
+                        <option value="49">49</option>
+                        <option value="50">50</option>
+                        <option value="51">51</option>
+                        <option value="52">52</option>
+                        <option value="53">53</option>
+                        <option value="54">54</option>
+                        <option value="55">55</option>
+                        <option value="56">56</option>
+                        <option value="57">57</option>
+                        <option value="58">58</option>
+                        <option value="59">59</option>
+                        <option value="60">60</option>
+                        <option value="61">61</option>
+                        <option value="62">62</option>
+                        <option value="63">63</option>
+                        <option value="64">64</option>
+                        <option value="65">65</option>
+                        <option value="66">66</option>
+                        <option value="67">67</option>
+                        <option value="68">68</option>
+                        <option value="69">69</option>
+                        <option value="70">70</option>
+                        <option value="71">71</option>
+                        <option value="72">72</option>
+                        <option value="73">73</option>
+                        <option value="74">74</option>
+                        <option value="75">75</option>
+                        <option value="76">76</option>
+                        <option value="77">77</option>
+                        <option value="78">78</option>
+                        <option value="79">79</option>
+                        <option value="80">80</option>
+                        <option value="81">81</option>
+                        <option value="82">82</option>
+                        <option value="83">83</option>
+                        <option value="84">84</option>
+                        <option value="85">85</option>
+                        <option value="86">86</option>
+                        <option value="87">87</option>
+                        <option value="88">88</option>
+                        <option value="89">89</option>
+                        <option value="90">90</option>
+                        <option value="91">91</option>
+                        <option value="92">92</option>
+                        <option value="93">93</option>
+                        <option value="94">94</option>
+                        <option value="95">95</option>
+                        <option value="96">96</option>
+                        <option value="97">97</option>
+                        <option value="98">98</option>
+                        <option value="99">99</option>
+                        <option value="99">99</option>
+                    </select>
+                    <span>时</span>
+                    <select id="minutesSelect">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                        <option value="32">32</option>
+                        <option value="33">33</option>
+                        <option value="34">34</option>
+                        <option value="35">35</option>
+                        <option value="36">36</option>
+                        <option value="37">37</option>
+                        <option value="38">38</option>
+                        <option value="39">39</option>
+                        <option value="40">40</option>
+                        <option value="41">41</option>
+                        <option value="42">42</option>
+                        <option value="43">43</option>
+                        <option value="44">44</option>
+                        <option value="45">45</option>
+                        <option value="46">46</option>
+                        <option value="47">47</option>
+                        <option value="48">48</option>
+                        <option value="49">49</option>
+                        <option value="50">50</option>
+                        <option value="51">51</option>
+                        <option value="52">52</option>
+                        <option value="53">53</option>
+                        <option value="54">54</option>
+                        <option value="55">55</option>
+                        <option value="56">56</option>
+                        <option value="57">57</option>
+                        <option value="58">58</option>
+                        <option value="59">59</option>
+                    </select>
+                    <span>分</span>
+                    <select id="secondsSelect">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="26">26</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                        <option value="29">29</option>
+                        <option value="30">30</option>
+                        <option value="31">31</option>
+                        <option value="32">32</option>
+                        <option value="33">33</option>
+                        <option value="34">34</option>
+                        <option value="35">35</option>
+                        <option value="36">36</option>
+                        <option value="37">37</option>
+                        <option value="38">38</option>
+                        <option value="39">39</option>
+                        <option value="40">40</option>
+                        <option value="41">41</option>
+                        <option value="42">42</option>
+                        <option value="43">43</option>
+                        <option value="44">44</option>
+                        <option value="45">45</option>
+                        <option value="46">46</option>
+                        <option value="47">47</option>
+                        <option value="48">48</option>
+                        <option value="49">49</option>
+                        <option value="50">50</option>
+                        <option value="51">51</option>
+                        <option value="52">52</option>
+                        <option value="53">53</option>
+                        <option value="54">54</option>
+                        <option value="55">55</option>
+                        <option value="56">56</option>
+                        <option value="57">57</option>
+                        <option value="58">58</option>
+                        <option value="59">59</option>
+                    </select>
+                    <span>秒</span>
+                    <button id="confirmTimeBtn">确定</button>
+                </div>
+            </div>
+            <div class="stage-info" id="stageInfo">当前阶段：初始状态 - 累计专注达5分钟解锁阳光</div>
+            <div class="theme-name" id="themeName">默认主题</div>
+            <!-- 返回主界面按钮 -->
+            <button id="backToMainBtn">返回主界面</button>
+        </div>
+    </div>
+
+    <script>
+        // 核心计时变量
+        const timerDisplay = document.getElementById('timer');
+        const progressBar = document.getElementById('progressBar');
+        const stageInfo = document.getElementById('stageInfo');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const setTimeBtn = document.getElementById('setTimeBtn');
+        const customTimeSelector = document.getElementById('customTimeSelector');
+        const hoursSelect = document.getElementById('hoursSelect');
+        const minutesSelect = document.getElementById('minutesSelect');
+        const secondsSelect = document.getElementById('secondsSelect');
+        const confirmTimeBtn = document.getElementById('confirmTimeBtn');
+        const backToMainBtn = document.getElementById('backToMainBtn');
+
+        // 时间设置
+        let totalSeconds = 25 * 60;
+        let remainingSeconds = totalSeconds;
+        let timerInterval;
+        let isRunning = false;
+        let accumulatedTime = 0;
+
+        // 场景解锁阈值
+        const STAGE_THRESHOLDS = {
+            SUN: 300,
+            PLANT_GROWTH: 900,
+            FULL_SCENE: 1500
+        };
+
+        // 初始化场景
+        function initScene() {
+            const sun = document.querySelector('.sun');
+            const plant = document.querySelector('.plant');
+            sun.style.opacity = '0';
+            plant.style.opacity = '0';
+            document.querySelectorAll('.plant-leaf').forEach(leaf => {
+                leaf.style.opacity = '0';
+            });
+        }
+
+        // 更新场景
+        function updateScene() {
+            const sun = document.querySelector('.sun');
+            const plant = document.querySelector('.plant');
+            if (accumulatedTime >= STAGE_THRESHOLDS.SUN) {
+                sun.style.opacity = '1';
+                stageInfo.textContent = `当前阶段：阳光初现 - 累计专注达15分钟解锁植物生长`;
+            }
+
+            if (accumulatedTime >= STAGE_THRESHOLDS.PLANT_GROWTH) {
+                plant.style.opacity = '1';
+                const leaves = document.querySelectorAll('.plant-leaf');
+                leaves.forEach(leaf => {
+                    leaf.style.transform += ' scale(1.5)';
+                    leaf.style.opacity = '1';
+                });
+                stageInfo.textContent = `当前阶段：生机萌发 - 累计专注达25分钟解锁完整场景`;
+            }
+
+            if (accumulatedTime >= STAGE_THRESHOLDS.FULL_SCENE) {
+                stageInfo.textContent = `恭喜！已解锁完整场景 - 继续专注将累积到下一阶段`;
+            }
+        }
+
+        // 格式化时间
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 更新计时器
+        function updateTimer() {
+            remainingSeconds--;
+            accumulatedTime++;
+            timerDisplay.textContent = formatTime(remainingSeconds);
+            const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+            progressBar.style.width = `${progress}%`;
+            updateScene();
+
+            if (remainingSeconds <= 0) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                toggleBtn.classList.remove('active');
+                const playIcon = document.querySelector('.play-icon');
+                const pauseIcon = document.querySelector('.pause-icon');
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                const btnText = document.querySelector('.btn-text');
+                btnText.textContent = '开始专注';
+                resetBtn.disabled = true;
+                alert('专注时间结束！恭喜你完成一次深度专注');
+            }
+        }
+
+        // 切换计时状态
+        toggleBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                isRunning = true;
+                timerInterval = setInterval(updateTimer, 1000);
+                toggleBtn.classList.add('active');
+                const playIcon = document.querySelector('.play-icon');
+                const pauseIcon = document.querySelector('.pause-icon');
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                const btnText = document.querySelector('.btn-text');
+                btnText.textContent = '暂停专注';
+                resetBtn.disabled = false;
+            } else {
+                clearInterval(timerInterval);
+                isRunning = false;
+                toggleBtn.classList.remove('active');
+                const playIcon = document.querySelector('.play-icon');
+                const pauseIcon = document.querySelector('.pause-icon');
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                const btnText = document.querySelector('.btn-text');
+                btnText.textContent = '继续专注';
+            }
+        });
+
+        // 重置计时
+        resetBtn.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            isRunning = false;
+            remainingSeconds = totalSeconds;
+            accumulatedTime = 0;
+            timerDisplay.textContent = formatTime(remainingSeconds);
+            progressBar.style.width = '0%';
+            toggleBtn.classList.remove('active');
+            const playIcon = document.querySelector('.play-icon');
+            const pauseIcon = document.querySelector('.pause-icon');
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            const btnText = document.querySelector('.btn-text');
+            btnText.textContent = '开始专注';
+            resetBtn.disabled = true;
+            initScene();
+            stageInfo.textContent = '当前阶段：初始状态 - 累计专注达5分钟解锁阳光';
+        });
+
+        // 时间设置
+        setTimeBtn.addEventListener('click', () => {
+            customTimeSelector.style.display = customTimeSelector.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        confirmTimeBtn.addEventListener('click', () => {
+            const hours = parseInt(hoursSelect.value);
+            const minutes = parseInt(minutesSelect.value);
+            const seconds = parseInt(secondsSelect.value);
+            totalSeconds = hours * 3600 + minutes * 60 + seconds;
+            remainingSeconds = totalSeconds;
+            timerDisplay.textContent = formatTime(remainingSeconds);
+            progressBar.style.width = '0%';
+            accumulatedTime = 0;
+            initScene();
+            stageInfo.textContent = '当前阶段：初始状态 - 累计专注达5分钟解锁阳光';
+            customTimeSelector.style.display = 'none';
+        });
+
+        // 返回主界面
+        backToMainBtn.addEventListener('click', () => {
+            window.location.href = "{% url 'index' %}";  // 使用Django路由
+        });
+        // 初始化
+        initScene();
+    </script>
+</body>
+</html>
